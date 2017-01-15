@@ -56,6 +56,25 @@ plug = gateway.connected_devices['plug'][0]
 print plug.write({'status': 'on'})
 ```
 
+Turn on party mode for Gateway Light
+
+```python
+from time import sleep
+import random
+alpha = (
+	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", 
+	"A", "B", "C", "D", "E", "F"
+)
+
+while True:
+	color = '99%s' % ''.join([random.choice(alpha) for _ in range(6)])
+	gateway.write(
+		{'rgb': int(color, 16)},
+		ack=False
+	)
+	sleep(0.2)
+```
+
 Save all devices to config
 
 ```python

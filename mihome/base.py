@@ -49,6 +49,7 @@ class XiaomiConnection(object):
         port = port or self.multicast_port
         if type(data) is dict:
             data = json.dumps(data)
+        print 'Sent to %s: %s' % (ip, data)
         return self.socket.sendto(
             data.encode("utf-8"), (ip, port)
         )
@@ -63,6 +64,7 @@ class XiaomiConnection(object):
                 for key, value in kwargs.items()
             ]
             if all(conditions):
+                print 'Received: %s' % payload
                 return payload
 
     def stream(self, **kwargs):
@@ -107,6 +109,12 @@ class BaseXiaomiDevice(object):
             'name': self.name
         }
 
+    def get_token(self):
+        return self.gateway.get_token()
+
+    def get_gateway_ip(self):
+        return self.gateway.ip
+
     def read(self):
         self.connection.send(
             {'cmd': 'read', 'sid': self.sid},
@@ -125,9 +133,9 @@ class BaseXiaomiDevice(object):
     def get_write_key(self, password, token):
         aes = AES.new(password, AES.MODE_CBC, str(IV))
         ciphertext = aes.encrypt(token)
-        return binascii.hexlify(ciphertext).upper()
+        return binascii.hexlify(ciphertext)
 
-    def write(self, data):
+    def write(self, data, ack=True):
         payload = {
             'cmd': 'write',
             'model': self.model,
@@ -135,11 +143,14 @@ class BaseXiaomiDevice(object):
             'short_id': self.short_id,
             'data': {
                 'key': self.get_write_key(
-                    XIAOMI_PASSWORD, self.gateway.get_token()
+                    XIAOMI_PASSWORD, self.get_token()
                 )
             }
         }
         payload['data'].update(data)
-        self.connection.send(payload, ip=self.gateway.ip)
-        return self.connection.receive(cmd='write_ack')
+        self.connection.send(
+            payload, ip=self.get_gateway_ip()
+        )
+        if ack:
+            return self.connection.receive(cmd='write_ack')
 

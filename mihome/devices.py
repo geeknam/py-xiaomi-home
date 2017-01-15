@@ -19,3 +19,8 @@ class MotionSensor(BaseXiaomiDevice):
 class Plug(BaseXiaomiDevice):
 
     model = 'plug'
+
+
+class Cube(BaseXiaomiDevice):
+
+    model = 'cube'

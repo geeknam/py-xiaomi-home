@@ -1,8 +1,18 @@
 import json
 from collections import defaultdict
+from datetime import datetime, timedelta
 
 from mihome.base import BaseXiaomiDevice
 from mihome import devices
+
+
+DEVICE_CLASS_MAP = {
+    'cube': devices.Cube,
+    'switch': devices.Switch,
+    'motion': devices.MotionSensor,
+    'magnet': devices.DoorMagnet,
+    'plug': devices.Plug
+}
 
 
 class Gateway(BaseXiaomiDevice):
@@ -12,11 +22,14 @@ class Gateway(BaseXiaomiDevice):
     def __init__(self, connection, sid, ip, port, subdevices=None):
         self.connection = connection
         self.sid = sid
+        self.short_id = 0
         self.ip = ip
         self.port = port
         self.subdevices = subdevices or []
         # categorised by model
         self.connected_devices = defaultdict(list)
+        self._token = None
+        self.last_token_update = None
 
     def serialise(self):
         return {
@@ -43,8 +56,22 @@ class Gateway(BaseXiaomiDevice):
         self.connection.send({'cmd': 'get_id_list'}, ip=self.ip)
         return self.connection.receive(cmd='get_id_list_ack')
 
+    @property
+    def should_update_token(self):
+        if not self._token:
+            return True
+        delta = datetime.now() - self.last_token_update
+        return delta > timedelta(seconds=10)
+
     def get_token(self):
-        return self.connection.receive(cmd='heartbeat')['token']
+        if not self.should_update_token:
+            return self._token
+        self._token = self.connection.receive(cmd='heartbeat')['token']
+        self.last_token_update = datetime.now()
+        return self._token
+
+    def get_gateway_ip(self):
+        return self.ip
 
     def get_subdevices(self, force=False):
         if self.subdevices and not force:
@@ -63,15 +90,9 @@ class Gateway(BaseXiaomiDevice):
         return self.subdevices
 
     def register_subdevices(self):
-        device_class_map = {
-            '': devices.Switch,
-            'switch': devices.Switch,
-            'motion': devices.MotionSensor,
-            'magnet': devices.DoorMagnet,
-            'plug': devices.Plug
-        }
+
         for device in self.get_subdevices():
-            device_class = device_class_map[device['model']]
+            device_class = DEVICE_CLASS_MAP[device['model']]
             self.connected_devices[device['model']].append(
                 device_class(self.connection, self, device['sid'], device['short_id'])
             )
