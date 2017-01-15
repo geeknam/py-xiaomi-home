@@ -30,6 +30,7 @@ Listen to any devices events
 
 ```python
 def switch_cb(item):
+	# publish to mqtt / kafka / redis
 	print item
 
 for switch in gateway.connected_devices['switch']:
