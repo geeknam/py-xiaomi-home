@@ -49,7 +49,6 @@ class XiaomiConnection(object):
         port = port or self.multicast_port
         if type(data) is dict:
             data = json.dumps(data)
-        print data
         return self.socket.sendto(
             data.encode("utf-8"), (ip, port)
         )
@@ -107,6 +106,13 @@ class BaseXiaomiDevice(object):
             'model': self.model,
             'name': self.name
         }
+
+    def read(self):
+        self.connection.send(
+            {'cmd': 'read', 'sid': self.sid},
+            ip=self.gateway.ip
+        )
+        return self.connection.receive(cmd='read_ack', sid=self.sid)
 
     def listen(self, callback, **kwargs):
         for item in self.connection.stream(sid=self.sid):

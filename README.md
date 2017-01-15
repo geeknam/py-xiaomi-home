@@ -36,6 +36,20 @@ for switch in gateway.connected_devices['switch']:
 	switch.listen(callback=switch_cb)
 ```
 
+Read device status by sending `read` and getting `read_ack`
+
+```python
+plug = gateway.connected_devices['plug'][0]
+print plug.read()
+```
+
+Write to device by sending `write` and getting `write_ack`
+
+```python
+plug = gateway.connected_devices['plug'][0]
+print plug.write({'status': 'on'})
+```
+
 Save all devices to config
 
 ```python
