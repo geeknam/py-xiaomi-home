@@ -44,6 +44,11 @@ print plug.read()
 ```
 
 Write to device by sending `write` and getting `write_ack`
+Make sure to export password as env var before using writes
+
+```bash
+$ export XIAOMI_PASSWORD=password
+```
 
 ```python
 plug = gateway.connected_devices['plug'][0]
